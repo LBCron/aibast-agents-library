@@ -470,6 +470,8 @@ if not exist "%SOURCE_DIR%" (
 
 cd /d "%SOURCE_DIR%"
 call "%VENV_DIR%\Scripts\activate.bat"
+REM Core Tools may prefer a global py/python3 over the activated venv's python.exe.
+set "languageWorkers:python:defaultExecutablePath=%VENV_DIR%\Scripts\python.exe"
 
 if "%1"=="" goto start
 if "%1"=="start" goto start
@@ -488,8 +490,7 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
-echo Project directory: %CD%
-func start --script-root "%SOURCE_DIR%" --verbose
+func start --script-root "%SOURCE_DIR%"
 goto end
 
 :status
@@ -578,7 +579,8 @@ function Launch-CommunityRAPP {
             param($dir, $venv)
             Set-Location $dir
             & (Join-Path $venv "Scripts\Activate.ps1")
-            func start --verbose
+            [Environment]::SetEnvironmentVariable("languageWorkers:python:defaultExecutablePath", (Join-Path $venv "Scripts\python.exe"), "Process")
+            func start --script-root $dir
         } -ArgumentList $SourceDir, $VenvDir
 
         # Wait for server (max 30s)
