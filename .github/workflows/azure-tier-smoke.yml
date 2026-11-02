@@ -109,4 +109,12 @@ jobs:
             try { $r = Invoke-WebRequest http://localhost:7071/api/health -UseBasicParsing -TimeoutSec 5; if ($r.StatusCode -eq 200) { $r.Content; $ok = $true; break } } catch { }
             Start-Sleep 5
           }
-          if (-not $ok) { Get-Content $log, "$log.err" -Tail 40 -ErrorAction SilentlyContinue; throw "server did not answer /api/health" }
+          if (-not $ok) {
+            Get-Content $log, "$log.err" -Tail 40 -ErrorAction SilentlyContinue
+            $settings = Join-Path $S "rapp_ai\local.settings.json"
+            "--- settings first bytes: " + ((Get-Content $settings -AsByteStream -TotalCount 8) -join ' ')
+            Get-Content $settings
+            "--- folder"; Get-ChildItem (Join-Path $S "rapp_ai") -Force | Select-Object -ExpandProperty Name
+            "--- func"; func --version; (Get-Command func).Source
+            throw "server did not answer /api/health"
+          }
