@@ -472,6 +472,7 @@ cd /d "%SOURCE_DIR%"
 call "%VENV_DIR%\Scripts\activate.bat"
 REM Core Tools may prefer a global py/python3 over the activated venv's python.exe.
 set "languageWorkers:python:defaultExecutablePath=%VENV_DIR%\Scripts\python.exe"
+set "languageWorkers__python__defaultExecutablePath=%VENV_DIR%\Scripts\python.exe"
 
 if "%1"=="" goto start
 if "%1"=="start" goto start
@@ -496,7 +497,7 @@ set languageWorkers
 where func
 "%VENV_DIR%\Scripts\python.exe" -c "import sys, openai; print(sys.executable); print(sys.prefix)"
 node -e "console.log(process.cwd()); console.log(process.env['languageWorkers:python:defaultExecutablePath']); console.log(process.env.VIRTUAL_ENV)"
-func start --script-root "%SOURCE_DIR%"
+func start --script-root "%SOURCE_DIR%" --python --verbose
 goto end
 
 :status
