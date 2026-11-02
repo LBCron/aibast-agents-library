@@ -490,6 +490,12 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
+echo Project directory: %CD%
+set VIRTUAL_ENV
+set languageWorkers
+where func
+"%VENV_DIR%\Scripts\python.exe" -c "import sys, openai; print(sys.executable); print(sys.prefix)"
+node -e "console.log(process.cwd()); console.log(process.env['languageWorkers:python:defaultExecutablePath']); console.log(process.env.VIRTUAL_ENV)"
 func start --script-root "%SOURCE_DIR%"
 goto end
 
