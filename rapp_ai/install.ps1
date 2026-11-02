@@ -497,7 +497,7 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
-call "$funcLauncher" start
+call func start
 exit /b %ERRORLEVEL%
 
 :status
