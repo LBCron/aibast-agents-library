@@ -488,7 +488,7 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
-func start
+func start --verbose
 goto end
 
 :status
@@ -577,7 +577,7 @@ function Launch-CommunityRAPP {
             param($dir, $venv)
             Set-Location $dir
             & (Join-Path $venv "Scripts\Activate.ps1")
-            func start
+            func start --verbose
         } -ArgumentList $SourceDir, $VenvDir
 
         # Wait for server (max 30s)
@@ -611,6 +611,7 @@ function Launch-CommunityRAPP {
             }
         } else {
             Write-Warn "Server started but health check timed out (it may still be initializing)"
+            Receive-Job $funcJob
         }
 
         # Stop the background job — user will start it themselves
