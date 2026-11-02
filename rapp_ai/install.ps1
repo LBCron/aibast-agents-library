@@ -497,7 +497,7 @@ set languageWorkers
 where func
 "%VENV_DIR%\Scripts\python.exe" -c "import sys, openai; print(sys.executable); print(sys.prefix)"
 node -e "console.log(process.cwd()); console.log(process.env['languageWorkers:python:defaultExecutablePath']); console.log(process.env.VIRTUAL_ENV)"
-func start --script-root "%SOURCE_DIR%" --python --verbose
+call func.cmd start --script-root "%SOURCE_DIR%" --python --verbose
 goto end
 
 :status

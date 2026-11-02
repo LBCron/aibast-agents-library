@@ -110,6 +110,9 @@ jobs:
             Start-Sleep 5
           }
           if (-not $ok) {
+            $funcDir = Split-Path (Get-Command func).Source
+            "--- npm launchers"
+            Get-Content (Join-Path $funcDir "func.cmd"), (Join-Path $funcDir "func.ps1"), (Join-Path $funcDir "node_modules\azure-functions-core-tools\lib\main.js") -ErrorAction SilentlyContinue
             Get-Content $log -TotalCount 160 -ErrorAction SilentlyContinue
             Get-Content "$log.err" -TotalCount 80 -ErrorAction SilentlyContinue
             Get-Content $log, "$log.err" -Tail 40 -ErrorAction SilentlyContinue
