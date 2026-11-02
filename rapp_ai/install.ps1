@@ -488,7 +488,8 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
-func start --verbose
+echo Project directory: %CD%
+func start --script-root "%SOURCE_DIR%" --verbose
 goto end
 
 :status
