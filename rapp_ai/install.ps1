@@ -452,6 +452,15 @@ function Install-CLI {
     }
 
     # ── communityrapp.cmd ─────────────────────────────────────────────────────
+    # npm also installs an extensionless POSIX shim; use its Windows shim in CMD.
+    $funcLauncher = (Get-Command func -ErrorAction Stop).Source
+    if ([IO.Path]::GetExtension($funcLauncher) -eq ".ps1") {
+        $funcLauncher = [IO.Path]::ChangeExtension($funcLauncher, ".cmd")
+    }
+    if (-not (Test-Path $funcLauncher -PathType Leaf)) {
+        Write-Err "Azure Functions launcher not found at $funcLauncher"
+    }
+
     $launcherCmd = Join-Path $BinDir "communityrapp.cmd"
     $launcherContent = @"
 @echo off
@@ -470,9 +479,6 @@ if not exist "%SOURCE_DIR%" (
 
 cd /d "%SOURCE_DIR%"
 call "%VENV_DIR%\Scripts\activate.bat"
-REM Core Tools may prefer a global py/python3 over the activated venv's python.exe.
-set "languageWorkers:python:defaultExecutablePath=%VENV_DIR%\Scripts\python.exe"
-set "languageWorkers__python__defaultExecutablePath=%VENV_DIR%\Scripts\python.exe"
 
 if "%1"=="" goto start
 if "%1"=="start" goto start
@@ -491,14 +497,8 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
-echo Project directory: %CD%
-set VIRTUAL_ENV
-set languageWorkers
-where func
-"%VENV_DIR%\Scripts\python.exe" -c "import sys, openai; print(sys.executable); print(sys.prefix)"
-node -e "console.log(process.cwd()); console.log(process.env['languageWorkers:python:defaultExecutablePath']); console.log(process.env.VIRTUAL_ENV)"
-call func.cmd start --script-root "%SOURCE_DIR%" --python --verbose
-goto end
+call "$funcLauncher" start
+exit /b %ERRORLEVEL%
 
 :status
 curl -sf http://localhost:7071/api/health && echo. || echo Server not running
@@ -586,8 +586,7 @@ function Launch-CommunityRAPP {
             param($dir, $venv)
             Set-Location $dir
             & (Join-Path $venv "Scripts\Activate.ps1")
-            [Environment]::SetEnvironmentVariable("languageWorkers:python:defaultExecutablePath", (Join-Path $venv "Scripts\python.exe"), "Process")
-            func start --script-root $dir
+            func start
         } -ArgumentList $SourceDir, $VenvDir
 
         # Wait for server (max 30s)
@@ -621,7 +620,6 @@ function Launch-CommunityRAPP {
             }
         } else {
             Write-Warn "Server started but health check timed out (it may still be initializing)"
-            Receive-Job $funcJob
         }
 
         # Stop the background job — user will start it themselves
