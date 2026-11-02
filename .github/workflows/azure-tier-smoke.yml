@@ -110,6 +110,8 @@ jobs:
             Start-Sleep 5
           }
           if (-not $ok) {
+            Get-Content $log -TotalCount 160 -ErrorAction SilentlyContinue
+            Get-Content "$log.err" -TotalCount 80 -ErrorAction SilentlyContinue
             Get-Content $log, "$log.err" -Tail 40 -ErrorAction SilentlyContinue
             $settings = Join-Path $S "rapp_ai\local.settings.json"
             "--- settings first bytes: " + ((Get-Content $settings -AsByteStream -TotalCount 8) -join ' ')
