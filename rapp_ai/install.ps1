@@ -452,15 +452,6 @@ function Install-CLI {
     }
 
     # ── communityrapp.cmd ─────────────────────────────────────────────────────
-    # npm also installs an extensionless POSIX shim; use its Windows shim in CMD.
-    $funcLauncher = (Get-Command func -ErrorAction Stop).Source
-    if ([IO.Path]::GetExtension($funcLauncher) -eq ".ps1") {
-        $funcLauncher = [IO.Path]::ChangeExtension($funcLauncher, ".cmd")
-    }
-    if (-not (Test-Path $funcLauncher -PathType Leaf)) {
-        Write-Err "Azure Functions launcher not found at $funcLauncher"
-    }
-
     $launcherCmd = Join-Path $BinDir "communityrapp.cmd"
     $launcherContent = @"
 @echo off
@@ -497,6 +488,7 @@ echo Starting Hippocampus on http://localhost:7071
 echo Press Ctrl+C to stop
 echo.
 start "" "%SOURCE_DIR%\index.html"
+REM npm's func.cmd exits its batch context before starting Node; CALL preserves ours.
 call func start
 exit /b %ERRORLEVEL%
 
