@@ -667,6 +667,44 @@ function Repair-BrainstemSource {
     }
 }
 
+function Get-BrainstemOwner {
+    # Who owns an existing ~/.brainstem? Read-only: the git remote of its source checkout.
+    param([string]$Src)
+    if (-not (Test-Path "$Src\.git")) { return $null }
+    $prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $url = (git -C $Src remote get-url origin 2>$null | Out-String).Trim()
+    $ErrorActionPreference = $prev
+    return $url
+}
+
+function Test-SameBrainstemSource([string]$A, [string]$B) {
+    $n = { param($u) ($u -replace '\.git$', '' -replace '/+$', '').ToLowerInvariant() }
+    return ((& $n $A) -eq (& $n $B))
+}
+
+function Confirm-ForeignBrainstem {
+    # Never silently take over a Brainstem this installer does not own. Prototype for a
+    # design decision (BRAINSTEM_ON_FOREIGN): stop (default) | adopt.
+    $src = "$BRAINSTEM_HOME\src"
+    $owner = Get-BrainstemOwner $src
+    if (-not $owner) { return }
+    if ($SOURCE_OVERRIDE_REQUESTED -or (Test-SameBrainstemSource $owner $REPO_URL)) { return }
+    $ver = "unknown"
+    try { $ver = (Get-Content "$src\rapp_brainstem\VERSION" -Raw).Trim() } catch {}
+    $mode = if ($env:BRAINSTEM_ON_FOREIGN) { $env:BRAINSTEM_ON_FOREIGN.ToLowerInvariant() } else { "stop" }
+    Write-Host ""
+    Write-Host "  [!] This PC already has a different Brainstem (v$ver) at $BRAINSTEM_HOME" -ForegroundColor Yellow
+    Write-Host "      It comes from: $owner" -ForegroundColor Yellow
+    Write-Host "      This installer is for:  $REPO_URL" -ForegroundColor Yellow
+    if ($mode -eq "adopt") {
+        Write-Host "  [..] Switching it to this installer's source; your soul, agents, .env, memory and sign-in are kept." -ForegroundColor Yellow
+        return
+    }
+    Write-Host "      Nothing was changed. To switch that Brainstem over (your soul, agents, memory and sign-in are kept), run:" -ForegroundColor Yellow
+    Write-Host "        `$env:BRAINSTEM_ON_FOREIGN='adopt'; irm https://microsoft.github.io/aibast-agents-library/install.ps1 | iex" -ForegroundColor White
+    throw "a different Brainstem is already installed (left unchanged)"
+}
+
 function Install-Brainstem {
     Write-Host ""
     Write-Host "Installing RAPP Brainstem..."
@@ -675,6 +713,7 @@ function Install-Brainstem {
         New-Item -ItemType Directory -Force -Path $BRAINSTEM_HOME | Out-Null
     }
 
+    Confirm-ForeignBrainstem
     if (Test-Path "$BRAINSTEM_HOME\src\.git") {
         Write-Host "  Limiting the install source to the Brainstem runtime..."
         if (-not (Enable-BrainstemSparseCheckout "$BRAINSTEM_HOME\src")) {

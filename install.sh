@@ -439,6 +439,32 @@ preserve_agent_collision() {
     echo -e "  ${YELLOW}⚠${NC} Preserved custom-agent name collision at $recovery_dir/$(basename "$agent_file")"
 }
 
+# Never silently take over a Brainstem this installer does not own. Prototype for a design
+# decision (BRAINSTEM_ON_FOREIGN): stop (default) | adopt. Read-only until adopt is chosen.
+confirm_foreign_brainstem() {
+    local src="$BRAINSTEM_HOME/src" owner ver mode norm_a norm_b
+    [ -d "$src/.git" ] || return 0
+    owner=$(git -C "$src" remote get-url origin 2>/dev/null || true)
+    [ -n "$owner" ] || return 0
+    [ "$SOURCE_OVERRIDE_REQUESTED" = true ] && return 0
+    norm_a=$(printf '%s' "$owner" | sed -E 's#\.git$##; s#/+$##' | tr '[:upper:]' '[:lower:]')
+    norm_b=$(printf '%s' "$REPO_URL" | sed -E 's#\.git$##; s#/+$##' | tr '[:upper:]' '[:lower:]')
+    [ "$norm_a" = "$norm_b" ] && return 0
+    ver=$(tr -d '[:space:]' < "$src/rapp_brainstem/VERSION" 2>/dev/null || echo unknown)
+    mode=$(printf '%s' "${BRAINSTEM_ON_FOREIGN:-stop}" | tr '[:upper:]' '[:lower:]')
+    echo ""
+    echo -e "  ${YELLOW}!${NC} This computer already has a different Brainstem (v$ver) at $BRAINSTEM_HOME"
+    echo "      It comes from: $owner"
+    echo "      This installer is for:  $REPO_URL"
+    if [ "$mode" = adopt ]; then
+        echo "  Switching it to this installer's source; your soul, agents, .env, memory and sign-in are kept."
+        return 0
+    fi
+    echo "      Nothing was changed. To switch that Brainstem over (your soul, agents, memory and sign-in are kept), run:"
+    echo "        curl -fsSL https://microsoft.github.io/aibast-agents-library/install.sh | BRAINSTEM_ON_FOREIGN=adopt bash"
+    exit 1
+}
+
 install_brainstem() {
     echo ""
     echo "Installing RAPP Brainstem..."
@@ -450,6 +476,7 @@ install_brainstem() {
     local DATA_DIR="$BRAINSTEM_HOME/src/rapp_brainstem/.brainstem_data"
     local LOCAL_VERSION_FILE="$BRAINSTEM_HOME/src/rapp_brainstem/VERSION"
 
+    confirm_foreign_brainstem
     if [ -d "$BRAINSTEM_HOME/src/.git" ]; then
         echo "  Limiting the install source to the Brainstem runtime..."
         if ! enable_brainstem_sparse_checkout "$BRAINSTEM_HOME/src"; then
