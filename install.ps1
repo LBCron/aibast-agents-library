@@ -691,7 +691,7 @@ function Get-BrainstemOwner {
     param([string]$Src)
     if (-not (Test-Path "$Src\.git")) { return $null }
     $prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    $url = (git -C $Src remote get-url origin 2>$null | Out-String).Trim()
+    $url = (git -C $Src config --get remote.origin.url 2>$null | Out-String).Trim()   # raw: get-url applies insteadOf rewrites (mirrors, CI)
     $ErrorActionPreference = $prev
     return $url
 }

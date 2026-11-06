@@ -444,7 +444,7 @@ preserve_agent_collision() {
 confirm_foreign_brainstem() {
     local src="$BRAINSTEM_HOME/src" owner ver mode norm_a norm_b
     [ -d "$src/.git" ] || return 0
-    owner=$(git -C "$src" remote get-url origin 2>/dev/null || true)
+    owner=$(git -C "$src" config --get remote.origin.url 2>/dev/null || true)  # raw: get-url applies insteadOf rewrites
     [ -n "$owner" ] || return 0
     [ "$SOURCE_OVERRIDE_REQUESTED" = true ] && return 0
     norm_a=$(printf '%s' "$owner" | sed -E 's#\.git$##; s#/+$##' | tr '[:upper:]' '[:lower:]')
