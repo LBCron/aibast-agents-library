@@ -1306,6 +1306,17 @@ function Launch-Brainstem {
         }
     }
 
+    # Server first, sign in on the page (round 4): the chat page has its own GitHub sign-in,
+    # so the user signs in where they will chat instead of in this console. Waiting here
+    # left the server down for the whole sign-in window. BRAINSTEM_CONSOLE_LOGIN=1 keeps the
+    # old console sign-in (headless machines, scripts).
+    if ($needsAuth -and $env:BRAINSTEM_CONSOLE_LOGIN -ne '1') {
+        Write-Host ""
+        Write-Host "  [..] Sign in with GitHub in the browser window that opens next." -ForegroundColor Cyan
+        Write-Host "      If no window opens, go to http://localhost:7071" -ForegroundColor Cyan
+        $needsAuth = $false
+    }
+
     if ($needsAuth) {
         Write-Host ""
         Write-Host "  Authenticating with GitHub Copilot..." -ForegroundColor Cyan
