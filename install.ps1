@@ -1310,7 +1310,9 @@ function Launch-Brainstem {
     # so the user signs in where they will chat instead of in this console. Waiting here
     # left the server down for the whole sign-in window. BRAINSTEM_CONSOLE_LOGIN=1 keeps the
     # old console sign-in (headless machines, scripts).
-    if ($needsAuth -and $env:BRAINSTEM_CONSOLE_LOGIN -ne '1') {
+    # No desktop to open a browser on (SSH, CI, a service): keep the console sign-in there.
+    $noDesktop = $env:SSH_CONNECTION -or $env:CI -or -not [Environment]::UserInteractive
+    if ($needsAuth -and $env:BRAINSTEM_CONSOLE_LOGIN -ne '1' -and -not $noDesktop) {
         Write-Host ""
         Write-Host "  [..] Sign in with GitHub in the browser window that opens next." -ForegroundColor Cyan
         Write-Host "      If no window opens, go to http://localhost:7071" -ForegroundColor Cyan
