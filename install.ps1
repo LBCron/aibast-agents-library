@@ -1316,7 +1316,9 @@ function Launch-Brainstem {
         Write-Host ""
         Write-Host "  [..] Sign in with GitHub in the browser window that opens next." -ForegroundColor Cyan
         Write-Host "      If no window opens, go to http://localhost:7071" -ForegroundColor Cyan
+        Write-Host "      Or enter the code shown below ('Device code login started') at https://github.com/login/device" -ForegroundColor Cyan
         $needsAuth = $false
+        $script:pageSignin = $true
     }
 
     if ($needsAuth) {
@@ -1442,7 +1444,11 @@ function Launch-Brainstem {
     # Open the browser once the server actually answers (#14) — a fixed delay
     # races cold startups and lands the user on a dead-port error page. Poll
     # /health, then open; after 60s open anyway so the user still gets the tab.
-    Start-Job -ScriptBlock {
+    # Page sign-in: ask the server for the code first, so the server prints it in this
+    # console too (the page reuses the same pending code). A browser first-run screen
+    # covering the page then never blocks sign-in.
+    Start-Job -ArgumentList ([bool]$script:pageSignin) -ScriptBlock {
+        param($askCode)
         for ($i = 0; $i -lt 60; $i++) {
             try {
                 Invoke-WebRequest -Uri "http://localhost:7071/health" -UseBasicParsing -TimeoutSec 1 | Out-Null
@@ -1450,6 +1456,9 @@ function Launch-Brainstem {
             } catch {
                 Start-Sleep -Seconds 1
             }
+        }
+        if ($askCode) {
+            try { Invoke-RestMethod -Uri "http://localhost:7071/login" -Method Post -TimeoutSec 20 | Out-Null } catch {}
         }
         Start-Process "http://localhost:7071"
     } | Out-Null
