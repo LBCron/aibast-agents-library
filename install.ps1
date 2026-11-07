@@ -1316,7 +1316,7 @@ function Launch-Brainstem {
         Write-Host ""
         Write-Host "  [..] Sign in with GitHub in the browser window that opens next." -ForegroundColor Cyan
         Write-Host "      If no window opens, go to http://localhost:7071" -ForegroundColor Cyan
-        Write-Host "      Or enter the code shown below ('Device code login started') at https://github.com/login/device" -ForegroundColor Cyan
+        Write-Host "      A small 'Brainstem sign-in' window also shows the code." -ForegroundColor Cyan
         $needsAuth = $false
         $script:pageSignin = $true
     }
@@ -1458,7 +1458,15 @@ function Launch-Brainstem {
             }
         }
         if ($askCode) {
-            try { Invoke-RestMethod -Uri "http://localhost:7071/login" -Method Post -TimeoutSec 20 | Out-Null } catch {}
+            # Show the code in its own small window: the server console scrolls it away in
+            # seconds and a browser first-run screen can cover the page. Same code as the page.
+            try {
+                $c = (Invoke-RestMethod -Uri "http://localhost:7071/login" -Method Post -TimeoutSec 20).user_code
+                if ($c -match '^[A-Z0-9]{4}-[A-Z0-9]{4}$') {
+                    $w = "`$host.UI.RawUI.WindowTitle='Brainstem sign-in'; Write-Host ''; Write-Host '  Sign in to the Brainstem with GitHub' -ForegroundColor Cyan; Write-Host ''; Write-Host '  1. Go to  https://github.com/login/device'; Write-Host '  2. Enter  $c' -ForegroundColor Yellow; Write-Host ''; Write-Host '  (The chat page at http://localhost:7071 shows the same code.) Close this window when done.'"
+                    Start-Process powershell.exe -ArgumentList '-NoProfile', '-NoExit', '-Command', $w
+                }
+            } catch {}
         }
         Start-Process "http://localhost:7071"
     } | Out-Null
